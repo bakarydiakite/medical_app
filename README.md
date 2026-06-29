@@ -2,6 +2,13 @@
 
 Application fullstack permettant la gestion et la prise de rendez-vous médicaux en ligne.
 
+## Démo en ligne
+
+| Service | URL |
+|---|---|
+| **Frontend** | https://medical-app-rust.vercel.app |
+| **Backend API** | https://medical-app-hcjj.onrender.com/api |
+
 ---
 
 ## Choix techniques
