@@ -4,8 +4,9 @@ import { Router } from '@angular/router'
 import { tap } from 'rxjs/operators'
 import { Observable } from 'rxjs'
 import { User, LoginRequest, RegisterRequest, AuthResponse } from '../../models/user.model'
+import { environment } from '../../../environments/environment'
 
-const API_URL = 'http://localhost:3001/api'
+const API_URL = environment.apiUrl
 
 /**
  * Service d'authentification — singleton partagé dans toute l'application.

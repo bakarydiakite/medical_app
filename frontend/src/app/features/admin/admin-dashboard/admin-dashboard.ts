@@ -6,10 +6,11 @@ import { AuthService } from '../../../core/services/auth.service'
 import {
   Center, Specialty, Doctor, Appointment, Absence, AbsenceReason
 } from '../../../models/appointment.model'
+import { environment } from '../../../environments/environment'
 
 type Tab = 'appointments' | 'doctors' | 'centers' | 'specialties'
 
-const API = 'http://localhost:3001/api'
+const API = environment.apiUrl
 
 /**
  * Tableau de bord administrateur — interface unifiée pour gérer l'ensemble
