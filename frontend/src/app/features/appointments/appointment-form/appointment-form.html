@@ -1,0 +1,246 @@
+<div class="booking-page">
+
+  <!-- Header -->
+  <header class="booking-header">
+    <a routerLink="/dashboard" class="back-link">← Retour</a>
+    <h1 class="booking-title">Prendre un rendez-vous</h1>
+  </header>
+
+  <!-- Indicateur d'étapes -->
+  <div class="steps-indicator">
+    <div class="step-item" [ngClass]="{ active: step() >= 1, done: step() > 1 }">
+      <div class="step-number">1</div>
+      <div class="step-label">Centre & Spécialité</div>
+    </div>
+    <div class="step-line" [ngClass]="{ active: step() > 1 }"></div>
+    <div class="step-item" [ngClass]="{ active: step() >= 2, done: step() > 2 }">
+      <div class="step-number">2</div>
+      <div class="step-label">Médecin</div>
+    </div>
+    <div class="step-line" [ngClass]="{ active: step() > 2 }"></div>
+    <div class="step-item" [ngClass]="{ active: step() >= 3, done: step() > 3 }">
+      <div class="step-number">3</div>
+      <div class="step-label">Date & Créneau</div>
+    </div>
+    <div class="step-line" [ngClass]="{ active: step() > 3 }"></div>
+    <div class="step-item" [ngClass]="{ active: step() >= 4 }">
+      <div class="step-number">4</div>
+      <div class="step-label">Confirmation</div>
+    </div>
+  </div>
+
+  <!-- Contenu de l'étape -->
+  <div class="step-content">
+
+    <!-- Erreur globale -->
+    @if (errorMessage()) {
+      <div class="error-message">{{ errorMessage() }}</div>
+    }
+
+    <!-- ===== ÉTAPE 1 : Centre + Spécialité ===== -->
+    @if (step() === 1) {
+      <div class="step-card">
+        <h2 class="step-title">Choisissez votre centre et spécialité</h2>
+
+        <div class="form-group">
+          <label class="form-label">Centre médical</label>
+          <div class="cards-grid">
+            @for (center of centers(); track center.id) {
+              <div
+                class="select-card"
+                [ngClass]="{ selected: selectedCenterId() === center.id }"
+                (click)="selectedCenterId.set(center.id)"
+              >
+                <div class="select-card-title">{{ center.name }}</div>
+                <div class="select-card-sub">{{ center.address }}</div>
+                <div class="select-card-sub">{{ center.contact }}</div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Spécialité</label>
+          <div class="specialty-grid">
+            @for (spec of specialties(); track spec.id) {
+              <div
+                class="specialty-chip"
+                [ngClass]="{ selected: selectedSpecialtyId() === spec.id }"
+                (click)="selectedSpecialtyId.set(spec.id)"
+              >
+                {{ spec.name }}
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="step-actions">
+          <button
+            class="btn-primary"
+            (click)="goToStep2()"
+            [disabled]="!selectedCenterId() || !selectedSpecialtyId()"
+          >
+            Voir les médecins disponibles →
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- ===== ÉTAPE 2 : Médecin ===== -->
+    @if (step() === 2) {
+      <div class="step-card">
+        <h2 class="step-title">Choisissez un médecin</h2>
+        <p class="step-subtitle">
+          {{ specialtyName() }} — {{ centerName() }}
+        </p>
+
+        @if (isLoading()) {
+          <div class="loading-mini">Chargement des médecins...</div>
+        }
+
+        @if (!isLoading() && doctors().length === 0) {
+          <div class="empty-state-mini">
+            Aucun médecin disponible pour cette combinaison.
+          </div>
+        }
+
+        <div class="doctors-grid">
+          @for (doctor of doctors(); track doctor.id) {
+            <div
+              class="doctor-card"
+              [ngClass]="{ selected: selectedDoctor()?.id === doctor.id }"
+              (click)="goToStep3(doctor)"
+            >
+              <div class="doctor-avatar-lg">{{ doctorInitial(doctor.name) }}</div>
+              <div class="doctor-card-info">
+                <div class="doctor-card-name">{{ doctor.name }}</div>
+                <div class="doctor-card-spec">{{ doctor.specialty.name }}</div>
+                <div class="doctor-card-center">{{ doctor.center.name }}</div>
+              </div>
+              <div class="doctor-availability" [ngClass]="doctor.isAvailable ? 'avail-yes' : 'avail-no'">
+                {{ doctor.isAvailable ? 'Disponible' : 'Indisponible' }}
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="step-actions">
+          <button class="btn-secondary" (click)="goBack()">← Retour</button>
+        </div>
+      </div>
+    }
+
+    <!-- ===== ÉTAPE 3 : Date + Créneaux ===== -->
+    @if (step() === 3) {
+      <div class="step-card">
+        <h2 class="step-title">Choisissez une date et un créneau</h2>
+        @if (selectedDoctor()) {
+          <p class="step-subtitle">avec {{ selectedDoctor()!.name }}</p>
+        }
+
+        <div class="form-group">
+          <label class="form-label" for="date">Date de consultation</label>
+          <input
+            id="date"
+            type="date"
+            class="form-input"
+            [(ngModel)]="selectedDate"
+            [min]="minDate"
+            (ngModelChange)="onDateChange()"
+          />
+        </div>
+
+        @if (selectedDate()) {
+          <div class="form-group">
+            <label class="form-label">Créneau horaire</label>
+
+            @if (slotsLoading()) {
+              <div class="loading-mini">Chargement des créneaux...</div>
+            }
+
+            @if (noSlots() && !slotsLoading()) {
+              <div class="no-slots-msg">
+                Aucun créneau disponible ce jour. Veuillez choisir une autre date.
+              </div>
+            }
+
+            @if (!slotsLoading() && slots().length > 0) {
+              <div class="slots-grid">
+                @for (slot of slots(); track slot.time) {
+                  <button
+                    class="slot-btn"
+                    [ngClass]="{ 'slot-selected': selectedSlot()?.time === slot.time }"
+                    (click)="selectSlot(slot)"
+                  >
+                    {{ slot.time }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <div class="step-actions">
+          <button class="btn-secondary" (click)="goBack()">← Retour</button>
+          <button
+            class="btn-primary"
+            (click)="goToStep4()"
+            [disabled]="!selectedDate() || !selectedSlot()"
+          >
+            Continuer →
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- ===== ÉTAPE 4 : Confirmation ===== -->
+    @if (step() === 4) {
+      <div class="step-card">
+        <h2 class="step-title">Confirmation de votre rendez-vous</h2>
+
+        <div class="summary-card">
+          <div class="summary-row">
+            <span class="summary-label">Médecin</span>
+            <span class="summary-value">{{ selectedDoctor()?.name }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Spécialité</span>
+            <span class="summary-value">{{ selectedDoctor()?.specialty?.name }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Centre</span>
+            <span class="summary-value">{{ selectedDoctor()?.center?.name }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Adresse</span>
+            <span class="summary-value">{{ selectedDoctor()?.center?.address }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Date</span>
+            <span class="summary-value">{{ formatDate(selectedDate()) }}</span>
+          </div>
+          <div class="summary-row summary-row-highlight">
+            <span class="summary-label">Heure</span>
+            <span class="summary-value summary-time">{{ selectedSlot()?.time }}</span>
+          </div>
+        </div>
+
+        <p class="confirm-note">
+          En confirmant, votre rendez-vous sera enregistré avec le statut <strong>En attente</strong>.
+        </p>
+
+        <div class="step-actions">
+          <button class="btn-secondary" (click)="goBack()">← Modifier</button>
+          <button
+            class="btn-confirm"
+            (click)="confirm()"
+            [disabled]="isLoading()"
+          >
+            {{ isLoading() ? 'Réservation en cours...' : 'Confirmer le rendez-vous' }}
+          </button>
+        </div>
+      </div>
+    }
+
+  </div>
+</div>

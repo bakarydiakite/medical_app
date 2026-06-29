@@ -1,0 +1,134 @@
+<div class="dashboard">
+
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="navbar-brand">
+      <span class="navbar-title">MedRDV</span>
+    </div>
+    <div class="navbar-user">
+      @if (currentUser()) {
+        <span class="user-name">{{ currentUser()!.name }}</span>
+        <span class="user-badge" [ngClass]="currentUser()!.role === 'ADMIN' ? 'badge-admin' : 'badge-patient'">
+          {{ currentUser()!.role === 'ADMIN' ? 'Admin' : 'Patient' }}
+        </span>
+      }
+      <button class="btn-logout" (click)="logout()">Déconnexion</button>
+    </div>
+  </header>
+
+  <main class="dashboard-content">
+
+    <!-- Titre + bouton nouveau RDV -->
+    <div class="dashboard-header">
+      <div>
+        <h1 class="dashboard-title">Mes rendez-vous</h1>
+        @if (currentUser()?.role === 'ADMIN') {
+          <p class="dashboard-subtitle">Vue administrateur — tous les rendez-vous</p>
+        } @else {
+          <p class="dashboard-subtitle">Gérez vos consultations médicales</p>
+        }
+      </div>
+      <a routerLink="/appointments/new" class="btn-new">+ Nouveau rendez-vous</a>
+    </div>
+
+    <!-- Cartes statistiques -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">{{ appointments().length }}</div>
+        <div class="stat-label">Total</div>
+      </div>
+      <div class="stat-card stat-pending">
+        <div class="stat-value">{{ pendingCount }}</div>
+        <div class="stat-label">En attente</div>
+      </div>
+      <div class="stat-card stat-confirmed">
+        <div class="stat-value">{{ confirmedCount }}</div>
+        <div class="stat-label">Confirmés</div>
+      </div>
+      <div class="stat-card stat-cancelled">
+        <div class="stat-value">{{ cancelledCount }}</div>
+        <div class="stat-label">Annulés</div>
+      </div>
+    </div>
+
+    <!-- Message d'erreur -->
+    @if (errorMessage()) {
+      <div class="error-message">{{ errorMessage() }}</div>
+    }
+
+    <!-- Chargement -->
+    @if (isLoading()) {
+      <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Chargement des rendez-vous...</p>
+      </div>
+    }
+
+    <!-- Liste des rendez-vous -->
+    @if (!isLoading()) {
+      @if (appointments().length === 0) {
+        <div class="empty-state">
+          <h3>Aucun rendez-vous</h3>
+          <p>Vous n'avez pas encore de rendez-vous planifié.</p>
+          <a routerLink="/appointments/new" class="btn-primary">Prendre un rendez-vous</a>
+        </div>
+      } @else {
+        <div class="appointments-grid">
+          @for (apt of appointments(); track apt.id) {
+            <div class="appointment-card" [ngClass]="'card-' + apt.status.toLowerCase()">
+
+              <!-- En-tête de la carte -->
+              <div class="card-header">
+                <div class="doctor-info">
+                  <div class="doctor-avatar">{{ doctorInitial(apt.doctor.name) }}</div>
+                  <div>
+                    <div class="doctor-name">{{ apt.doctor.name }}</div>
+                    <div class="doctor-specialty">{{ apt.doctor.specialty.name }}</div>
+                  </div>
+                </div>
+                <span class="status-badge" [ngClass]="statusClass(apt.status)">
+                  {{ statusLabel(apt.status) }}
+                </span>
+              </div>
+
+              <!-- Détails -->
+              <div class="card-body">
+                <div class="detail-row">
+                  <span class="detail-label">Centre</span>
+                  <span>{{ apt.doctor.center.name }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Date</span>
+                  <span>{{ apt.dateTime | date:'dd/MM/yyyy' }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Heure</span>
+                  <span>{{ apt.dateTime | date:'HH:mm' }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Adresse</span>
+                  <span>{{ apt.doctor.center.address }}</span>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              @if (apt.status === 'PENDING') {
+                <div class="card-footer">
+                  <button
+                    class="btn-cancel"
+                    (click)="cancelAppointment(apt.id)"
+                    [disabled]="cancellingId() === apt.id"
+                  >
+                    {{ cancellingId() === apt.id ? 'Annulation...' : 'Annuler ce RDV' }}
+                  </button>
+                </div>
+              }
+
+            </div>
+          }
+        </div>
+      }
+    }
+
+  </main>
+</div>

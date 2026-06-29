@@ -1,0 +1,105 @@
+<div class="auth-container">
+  <div class="auth-card">
+
+    <h1 class="auth-title">Créer un compte</h1>
+    <p class="auth-subtitle">Rejoignez notre plateforme médicale</p>
+
+    <form (ngSubmit)="onSubmit()" #registerForm="ngForm">
+
+      <!-- Champ nom -->
+      <div class="form-group">
+        <label for="name">Nom complet</label>
+        <input
+          id="name"
+          type="text"
+          name="name"
+          [(ngModel)]="formData.name"
+          required
+          placeholder="John Doe"
+          class="form-input"
+        />
+      </div>
+
+      <!-- Champ email -->
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          name="email"
+          [(ngModel)]="formData.email"
+          required
+          placeholder="votre@email.com"
+          class="form-input"
+        />
+      </div>
+
+      <!-- Champ mot de passe -->
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <input
+          id="password"
+          type="password"
+          name="password"
+          [(ngModel)]="formData.password"
+          required
+          minlength="6"
+          placeholder="••••••••"
+          class="form-input"
+        />
+      </div>
+
+      <!-- Confirmation mot de passe -->
+      <div class="form-group">
+        <label for="confirmPassword">Confirmer le mot de passe</label>
+        <input
+          id="confirmPassword"
+          type="password"
+          name="confirmPassword"
+          [ngModel]="confirmPassword()"
+          (ngModelChange)="confirmPassword.set($event)"
+          required
+          placeholder="••••••••"
+          class="form-input"
+          [class.input-error]="!passwordsMatch && formData.password"
+        />
+      </div>
+
+      <!-- Avertissement mots de passe différents -->
+      @if (!passwordsMatch && formData.password) {
+        <p class="warning-message">
+          Les mots de passe ne correspondent pas
+        </p>
+      }
+
+      <!-- Message d'erreur backend -->
+      @if (errorMessage()) {
+        <div class="error-message">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <!-- Message de succès -->
+      @if (successMessage()) {
+        <div class="success-message">
+          {{ successMessage() }}
+        </div>
+      }
+
+      <button
+        type="submit"
+        class="btn-primary"
+        [disabled]="isLoading() || registerForm.invalid || !passwordsMatch"
+      >
+        {{ isLoading() ? 'Création...' : 'Créer mon compte' }}
+      </button>
+
+    </form>
+
+    <p class="auth-link">
+      Déjà un compte ?
+      <a routerLink="/login">Se connecter</a>
+    </p>
+
+  </div>
+</div>

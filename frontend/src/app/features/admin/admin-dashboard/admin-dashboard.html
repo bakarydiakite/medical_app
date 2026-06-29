@@ -1,0 +1,342 @@
+<div class="admin-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">MedRDV <span class="brand-admin">Admin</span></div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item" [ngClass]="{ active: activeTab() === 'appointments' }" (click)="setTab('appointments')">
+        Rendez-vous
+        @if (pendingCount > 0) {
+          <span class="nav-badge">{{ pendingCount }}</span>
+        }
+      </button>
+      <button class="nav-item" [ngClass]="{ active: activeTab() === 'doctors' }" (click)="setTab('doctors')">
+        Médecins
+      </button>
+      <button class="nav-item" [ngClass]="{ active: activeTab() === 'centers' }" (click)="setTab('centers')">
+        Centres
+      </button>
+      <button class="nav-item" [ngClass]="{ active: activeTab() === 'specialties' }" (click)="setTab('specialties')">
+        Spécialités
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-user-name">{{ currentUser()?.name }}</div>
+        <div class="sidebar-user-role">Administrateur</div>
+      </div>
+      <button class="btn-logout" (click)="logout()">Déconnexion</button>
+    </div>
+  </aside>
+
+  <!-- Contenu principal -->
+  <main class="admin-main">
+
+    @if (errorMsg()) {
+      <div class="alert alert-error">{{ errorMsg() }}</div>
+    }
+    @if (successMsg()) {
+      <div class="alert alert-success">{{ successMsg() }}</div>
+    }
+
+    <!-- ============================================================ -->
+    <!-- TAB : RENDEZ-VOUS                                            -->
+    <!-- ============================================================ -->
+    @if (activeTab() === 'appointments') {
+      <div class="section-header">
+        <h1 class="section-title">Rendez-vous</h1>
+        <div class="stats-row">
+          <span class="stat-chip">Total : {{ appointments().length }}</span>
+          <span class="stat-chip chip-pending">En attente : {{ pendingCount }}</span>
+          <span class="stat-chip chip-confirmed">Confirmés : {{ confirmedCount }}</span>
+          <span class="stat-chip chip-cancelled">Annulés : {{ cancelledCount }}</span>
+        </div>
+      </div>
+
+      @if (aptsLoading()) {
+        <div class="loading">Chargement...</div>
+      } @else if (appointments().length === 0) {
+        <div class="empty">Aucun rendez-vous enregistré.</div>
+      } @else {
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Patient</th>
+                <th>Médecin</th>
+                <th>Spécialité</th>
+                <th>Centre</th>
+                <th>Date</th>
+                <th>Heure</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (apt of appointments(); track apt.id) {
+                <tr>
+                  <td>{{ apt.user?.name ?? '—' }}</td>
+                  <td>{{ apt.doctor.name }}</td>
+                  <td>{{ apt.doctor.specialty.name }}</td>
+                  <td>{{ apt.doctor.center.name }}</td>
+                  <td>{{ apt.dateTime | date:'dd/MM/yyyy' }}</td>
+                  <td>{{ apt.dateTime | date:'HH:mm' }}</td>
+                  <td>
+                    <span class="badge" [ngClass]="statusClass(apt.status)">
+                      {{ statusLabel(apt.status) }}
+                    </span>
+                  </td>
+                  <td class="actions-cell">
+                    @if (apt.status === 'PENDING') {
+                      <button class="btn-sm btn-confirm"
+                        (click)="confirmAppt(apt.id)"
+                        [disabled]="actioningId() === apt.id">
+                        Confirmer
+                      </button>
+                    }
+                    @if (apt.status !== 'CANCELLED') {
+                      <button class="btn-sm btn-danger"
+                        (click)="cancelAppt(apt.id)"
+                        [disabled]="actioningId() === apt.id">
+                        Annuler
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+
+    <!-- ============================================================ -->
+    <!-- TAB : MÉDECINS                                               -->
+    <!-- ============================================================ -->
+    @if (activeTab() === 'doctors') {
+      <div class="section-header">
+        <h1 class="section-title">Médecins ({{ doctors().length }})</h1>
+        <button class="btn-add" (click)="openDoctorForm()">+ Ajouter un médecin</button>
+      </div>
+
+      @if (showDoctorForm()) {
+        <div class="inline-form">
+          <h3 class="form-title">{{ editingDoctor() ? 'Modifier le médecin' : 'Nouveau médecin' }}</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Nom complet</label>
+              <input class="form-input" [(ngModel)]="doctorForm.name" placeholder="Dr. Prénom Nom" />
+            </div>
+            <div class="form-group">
+              <label>Spécialité</label>
+              <select class="form-input" [(ngModel)]="doctorForm.specialtyId">
+                <option [ngValue]="0" disabled>Choisir...</option>
+                @for (s of specialties(); track s.id) {
+                  <option [ngValue]="s.id">{{ s.name }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Centre</label>
+              <select class="form-input" [(ngModel)]="doctorForm.centerId">
+                <option [ngValue]="0" disabled>Choisir...</option>
+                @for (c of centers(); track c.id) {
+                  <option [ngValue]="c.id">{{ c.name }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Disponibilité</label>
+              <select class="form-input" [(ngModel)]="doctorForm.isAvailable">
+                <option [ngValue]="true">Disponible</option>
+                <option [ngValue]="false">Indisponible</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-save" (click)="saveDoctor()"
+              [disabled]="!doctorForm.name || !doctorForm.specialtyId || !doctorForm.centerId">
+              {{ editingDoctor() ? 'Enregistrer' : 'Créer' }}
+            </button>
+            <button class="btn-cancel-form" (click)="showDoctorForm.set(false)">Annuler</button>
+          </div>
+        </div>
+      }
+
+      @if (docsLoading()) {
+        <div class="loading">Chargement...</div>
+      } @else {
+        <div class="doctors-list">
+          @for (doc of doctors(); track doc.id) {
+            <div class="doctor-row">
+              <div class="doctor-row-main">
+                <div class="doc-info">
+                  <div class="doc-name">{{ doc.name }}</div>
+                  <div class="doc-meta">{{ doc.specialty.name }} — {{ doc.center.name }}</div>
+                </div>
+                <span class="badge" [ngClass]="doc.isAvailable ? 'badge-confirmed' : 'badge-cancelled'">
+                  {{ doc.isAvailable ? 'Disponible' : 'Indisponible' }}
+                </span>
+                <div class="doc-actions">
+                  <button class="btn-sm btn-edit" (click)="openDoctorForm(doc)">Modifier</button>
+                  <button class="btn-sm btn-absence" (click)="toggleAbsenceForm(doc.id)">
+                    {{ showAbsenceFormFor() === doc.id ? 'Fermer' : 'Absences' }}
+                    @if (doc.absences?.length) {
+                      <span class="absence-count">{{ doc.absences!.length }}</span>
+                    }
+                  </button>
+                </div>
+              </div>
+
+              @if (showAbsenceFormFor() === doc.id) {
+                <div class="absence-panel">
+                  @if (doc.absences && doc.absences.length > 0) {
+                    <div class="absence-list">
+                      <div class="absence-list-title">Absences enregistrées</div>
+                      @for (abs of doc.absences; track abs.id) {
+                        <div class="absence-item">
+                          <span class="absence-reason">{{ reasonLabel(abs.reason) }}</span>
+                          <span>du {{ abs.startDate | date:'dd/MM/yyyy' }} au {{ abs.endDate | date:'dd/MM/yyyy' }}</span>
+                          <button class="btn-sm btn-danger" (click)="deleteAbsence(doc.id, abs.id)">Supprimer</button>
+                        </div>
+                      }
+                    </div>
+                  }
+                  <div class="absence-form">
+                    <div class="absence-form-title">Déclarer une absence</div>
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label>Début</label>
+                        <input type="date" class="form-input" [(ngModel)]="absenceForm.startDate" />
+                      </div>
+                      <div class="form-group">
+                        <label>Fin</label>
+                        <input type="date" class="form-input" [(ngModel)]="absenceForm.endDate" />
+                      </div>
+                      <div class="form-group">
+                        <label>Motif</label>
+                        <select class="form-input" [(ngModel)]="absenceForm.reason">
+                          @for (r of absenceReasons; track r.value) {
+                            <option [ngValue]="r.value">{{ r.label }}</option>
+                          }
+                        </select>
+                      </div>
+                      <div class="form-group form-group-btn">
+                        <button class="btn-save"
+                          (click)="saveAbsence(doc.id)"
+                          [disabled]="!absenceForm.startDate || !absenceForm.endDate">
+                          Enregistrer
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    }
+
+    <!-- ============================================================ -->
+    <!-- TAB : CENTRES                                                -->
+    <!-- ============================================================ -->
+    @if (activeTab() === 'centers') {
+      <div class="section-header">
+        <h1 class="section-title">Centres médicaux ({{ centers().length }})</h1>
+        <button class="btn-add" (click)="openCenterForm()">+ Ajouter un centre</button>
+      </div>
+
+      @if (showCenterForm()) {
+        <div class="inline-form">
+          <h3 class="form-title">{{ editingCenter() ? 'Modifier le centre' : 'Nouveau centre' }}</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Nom</label>
+              <input class="form-input" [(ngModel)]="centerForm.name" placeholder="Centre Médical..." />
+            </div>
+            <div class="form-group">
+              <label>Adresse</label>
+              <input class="form-input" [(ngModel)]="centerForm.address" placeholder="10 rue..." />
+            </div>
+            <div class="form-group">
+              <label>Contact</label>
+              <input class="form-input" [(ngModel)]="centerForm.contact" placeholder="01 23 45 67 89" />
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-save" (click)="saveCenter()"
+              [disabled]="!centerForm.name || !centerForm.address || !centerForm.contact">
+              {{ editingCenter() ? 'Enregistrer' : 'Créer' }}
+            </button>
+            <button class="btn-cancel-form" (click)="showCenterForm.set(false)">Annuler</button>
+          </div>
+        </div>
+      }
+
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nom</th>
+              <th>Adresse</th>
+              <th>Contact</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (center of centers(); track center.id) {
+              <tr>
+                <td><strong>{{ center.name }}</strong></td>
+                <td>{{ center.address }}</td>
+                <td>{{ center.contact }}</td>
+                <td class="actions-cell">
+                  <button class="btn-sm btn-edit" (click)="openCenterForm(center)">Modifier</button>
+                  <button class="btn-sm btn-danger" (click)="deleteCenter(center.id)">Supprimer</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <!-- ============================================================ -->
+    <!-- TAB : SPÉCIALITÉS                                            -->
+    <!-- ============================================================ -->
+    @if (activeTab() === 'specialties') {
+      <div class="section-header">
+        <h1 class="section-title">Spécialités ({{ specialties().length }})</h1>
+        <button class="btn-add" (click)="showSpecForm.set(true)">+ Ajouter</button>
+      </div>
+
+      @if (showSpecForm()) {
+        <div class="inline-form inline-form-sm">
+          <h3 class="form-title">Nouvelle spécialité</h3>
+          <div class="form-row">
+            <div class="form-group" style="flex:1">
+              <label>Nom</label>
+              <input class="form-input" [(ngModel)]="newSpecName" placeholder="Cardiologie..." />
+            </div>
+            <div class="form-group form-group-btn">
+              <button class="btn-save" (click)="addSpecialty()" [disabled]="!newSpecName.trim()">Créer</button>
+              <button class="btn-cancel-form" (click)="showSpecForm.set(false)">Annuler</button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <div class="spec-grid">
+        @for (spec of specialties(); track spec.id) {
+          <div class="spec-card">
+            <span class="spec-name">{{ spec.name }}</span>
+            <button class="btn-sm btn-danger" (click)="deleteSpecialty(spec.id)">Supprimer</button>
+          </div>
+        }
+      </div>
+    }
+
+  </main>
+</div>

@@ -1,0 +1,109 @@
+// Configuration du générateur Prisma Client
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Table des utilisateurs
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(PATIENT)
+  createdAt DateTime @default(now())
+
+  // Un utilisateur peut avoir plusieurs rendez-vous
+  appointments Appointment[]
+}
+
+// Table des centres médicaux
+model Center {
+  id      Int     @id @default(autoincrement())
+  name    String
+  address String
+  contact String
+
+  // Un centre peut avoir plusieurs médecins
+  doctors Doctor[]
+}
+
+// Table des spécialités médicales
+model Specialty {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  // Une spécialité peut avoir plusieurs médecins
+  doctors Doctor[]
+}
+
+// Table des médecins
+model Doctor {
+  id          Int     @id @default(autoincrement())
+  name        String
+  isAvailable Boolean @default(true)
+
+  // Un médecin appartient à une spécialité
+  specialtyId Int
+  specialty   Specialty @relation(fields: [specialtyId], references: [id])
+
+  // Un médecin appartient à un centre
+  centerId Int
+  center   Center @relation(fields: [centerId], references: [id])
+
+  // Un médecin peut avoir plusieurs absences et rendez-vous
+  absences     Absence[]
+  appointments Appointment[]
+}
+
+// Table des absences des médecins
+model Absence {
+  id        Int          @id @default(autoincrement())
+  startDate DateTime
+  endDate   DateTime
+  reason    AbsenceReason
+
+  // Une absence appartient à un médecin
+  doctorId Int
+  doctor   Doctor @relation(fields: [doctorId], references: [id])
+}
+
+// Table des rendez-vous
+model Appointment {
+  id       Int               @id @default(autoincrement())
+  dateTime DateTime
+  status   AppointmentStatus @default(PENDING)
+  createdAt DateTime         @default(now())
+
+  // Un rendez-vous appartient à un patient
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  // Un rendez-vous appartient à un médecin
+  doctorId Int
+  doctor   Doctor @relation(fields: [doctorId], references: [id])
+}
+
+// Rôles possibles d'un utilisateur
+enum Role {
+  PATIENT
+  ADMIN
+}
+
+// Statuts possibles d'un rendez-vous
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+// Motifs possibles d'une absence
+enum AbsenceReason {
+  SICKNESS
+  VACATION
+  OTHER
+}

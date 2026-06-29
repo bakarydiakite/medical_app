@@ -1,0 +1,67 @@
+<div class="auth-container">
+  <div class="auth-card">
+
+    <!-- Titre de la page -->
+    <h1 class="auth-title">Connexion</h1>
+    <p class="auth-subtitle">Accédez à votre espace médical</p>
+
+    <!-- Formulaire de login -->
+    <!-- (ngSubmit) appelle onSubmit() quand l'utilisateur appuie sur Entrée ou clique Submit -->
+    <!-- #loginForm="ngForm" crée une référence au formulaire pour la validation -->
+    <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
+
+      <!-- Champ email -->
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          name="email"
+          [(ngModel)]="formData.email"
+          required
+          placeholder="votre@email.com"
+          class="form-input"
+        />
+      </div>
+
+      <!-- Champ mot de passe -->
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <input
+          id="password"
+          type="password"
+          name="password"
+          [(ngModel)]="formData.password"
+          required
+          placeholder="••••••••"
+          class="form-input"
+        />
+      </div>
+
+      <!-- Message d'erreur — affiché uniquement si errorMessage n'est pas vide -->
+      @if (errorMessage()) {
+        <div class="error-message">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <!-- Bouton de soumission — désactivé pendant le chargement -->
+      <button
+        type="submit"
+        class="btn-primary"
+        [disabled]="isLoading() || loginForm.invalid"
+      >
+        <!-- Texte qui change selon l'état de chargement -->
+        {{ isLoading() ? 'Connexion...' : 'Se connecter' }}
+      </button>
+
+    </form>
+
+    <!-- Lien vers la page d'inscription -->
+    <p class="auth-link">
+      Pas encore de compte ?
+      <a routerLink="/register">S'inscrire</a>
+    </p>
+
+  </div>
+</div>
