@@ -1,7 +1,9 @@
--- =============================================================
+
 -- Schéma de la base de données — Application MedRDV
--- PostgreSQL 15
--- =============================================================
+
+docker exec -i medical_db psql "postgresql://medical_app_db_h5p4_user:mjQ5SE52Yjf2Z67kuw8dz3bAkebkkgWi@dpg-d91be18k1i2s738d83q0-a.oregon-postgres.render.com/medical_app_db_h5p4" < "G:\medical-app\database\seed.sql"
+
+
 
 -- Enums
 CREATE TYPE "Role" AS ENUM ('PATIENT', 'ADMIN');
