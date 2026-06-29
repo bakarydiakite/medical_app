@@ -50,8 +50,8 @@ INSERT INTO "User" (name, email, password, role, "createdAt") VALUES
     NOW()
   ),
   (
-    'Jean Dupont',
-    'patient@medical.com',
+    'Bakary DIALLO',
+    'bakary@gmail.com',
     '$2b$10$uPlIZLRvEVMZ1nQ4AYRIyOXGxbDYlxseBk3IbD2aakLaNZdgqiL5K',
     'PATIENT',
     NOW()

@@ -119,8 +119,8 @@ npm start
 
 | Rôle | Email | Mot de passe |
 |---|---|---|
-| Administrateur | `admin@medical.com`    | `Admin123!` |
-| Patient        | `patient@medical.com`  | `Admin123!` |
+| Administrateur | `admin@medical.com`  | `Admin123!` |
+| Patient        | `bakary@gmail.com`   | `Admin123!` |
 
 ---
 
