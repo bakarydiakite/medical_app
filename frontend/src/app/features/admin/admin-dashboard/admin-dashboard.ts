@@ -4,9 +4,9 @@ import { NgClass, DatePipe } from '@angular/common'
 import { HttpClient } from '@angular/common/http'
 import { AuthService } from '../../../core/services/auth.service'
 import {
-  Center, Specialty, Doctor, Appointment, Absence, AbsenceReason
+  Center, Specialty, Doctor, Appointment, AbsenceReason
 } from '../../../models/appointment.model'
-import { environment } from '../../../environments/environment'
+import { environment } from '../../../../environments/environment'
 
 type Tab = 'appointments' | 'doctors' | 'centers' | 'specialties'
 
